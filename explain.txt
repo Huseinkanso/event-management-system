@@ -1,0 +1,94 @@
+---------------------------- after every change of the configuration very important to run ////// php artisan config:cache
+1)to protect the request from frontend to allow only our application we use cors;
+
+    cors=Cross-Origin Resource Sharing (CORS)
+     is an HTTP-header based mechanism that allows a server to indicate
+     any origins (domain, scheme, or port) other than its own from which a browser should permit loading resources.
+we define that in cors.php in config  in allowed_origins
+/////// in laravel 9+ cors is added to laravel core so no need to do this (only type the url expected)
+
+2) spa authentication with laravel sanctum
+    a)spa and laravel api must be on the same top-level domain  because sanctum works by set up httponly,lax cookie (this cookie cannot be read or stolen and cannot be shared across different domains) so we need same top level domain
+        so we need to configure our cors domain in config/cors.php
+    b)configure cookie domain (in session )
+    // cookie domain should not include scheme,port or trailing slash
+                                        http:// , 3000 or /
+                only the host
+    c)configure sanctum stateful domain  (SANCTUM_STATEFUL_DOMAINS in env it is used in sanctum.php)
+    this include top level domain and port of spa
+
+    // axios take the cookie himself if we use other one we need to send it manually
+
+
+4)laravel telescope ::used for debugging laravel app
+    composer require laravel/telescope
+    b) if telescope keep scaning we need to except csrf token for it so in csrfverify token in except array add 'telescope/*'
+
+5)laravel email : when sending email we wrok with mailable class so we define all in
+    a) php artisan make:mail OrderShipped  to create email class for specific email
+    b) inside there is content class where we can define a view that will be send as content and define the view in our laravel app
+    c) to send we send email using mail facade
+6) in sending email it takes time so we need to use a queue to send it
+    // to use queu we need to set a driver,lke db check docs
+    a)// to use db we need to change QUEUE_CONNECTION in .env to database
+    //  we can use markdown mail that will give ready views to send by
+    php artisan make:mail WelcomeEmail --markdown=emails.welcome
+          // make the mail we want        get view markdown for it
+    and get the mail stuff in resource by
+    php artisan vendor:publish --tag=laravel-mail
+
+    // to start the queue we run
+    php artisan queue:work
+    // this will stop when closing terminal but to run it permantly we need a supervisor to install (check docs)
+    b)using redis
+        // we can use predis or phpredis extension we will use here predis so
+            1-in database.php we change REDIS_CLIENT to predis in env and QUEUE_CONNECTION to redis
+            2-install predis === composer require predis/predis
+    c)use horizon to handle mail queue that will be sent
+        --install horizon
+        -- set configuration and setup redis as database
+        -- run php artisan horizon
+    d)use socialite package to login with github (we install it and add the route from docs )
+        --b when process finish we can give the url that will redirect back if we want in config/services.socialChoosen
+        -- we need to create in github developper settings a new auth in settings to get client_id and other stuff
+    ///////// we can create migration to update table
+        ex::
+        php artisan make:migration add_is_admin_to_user_table --table=users
+
+///// add payment
+    a)download laravel cachier
+    b)migrate the changes,there is migration for subscription also
+    c)configure api key and secret
+    d)setup stripe for backend // see docs for that
+    e)
+// we use main notification via notification in laravel to notify the user when payment is done
+// we create notification that use mail by default
+// to add it to queue we can  give it implements shouldQueue and it will work via horizon
+
+////////////// STRIPE
+1)to make multi vendors we need to signup for connects is stripe
+2)create account for seller on registration
+3)make charge when selling and transfer money to account using payment method
+
+
+
+
+253
+253
+
+
+
+
+
+
+
+
+
+
+
+/// docker
+1) docker pull name ==> get a docker image from hub.docker.com
+---- install mysql container
+    a) docker pull mysql
+    // -e =for enviroment , -d = in ditach mode
+    b) docker run -e MYSQL_ROOT_PASSWORD=root12 -d mysql
